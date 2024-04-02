@@ -1,43 +1,23 @@
-#ifndef DATABASE_H
-#define DATABASE_H
-
 #include <string>
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "database.h"
 
-enum Type { INT, DOUBLE, STRING, ARRAY };
-
-void addEntry(Entry* entry);
-void resize();
-void init(Database &database);
+void addEntry(Database &database, Entry* entry);
+void resize(Database &database);
 void* addArray(Database &database, Entry *entry);
-void add(Database &database, Entry *entry);
 void list(Database &database);
-void remove(Database &database, std::string &key);
-void destroy(Database &database);
 void printArray(Entry* getEntry);
-Entry *get(Database &database, std::string &key);
-Entry *create(Type type, std::string key, void *value);
+void init(Database &database);
 
 int arrayCount = 0;
 
-struct Array {
-    int size;
-    Type type;
-}
-
-struct Entry {
-    Type type;
-    std::string key;
-    void *value;
-};
-
 void init(Database &database) {
     database.capacity = 10;
-    database.size = 0;
-    Entry** entries = new Entry*[capacity];
+    database.dataSize = 0;
+    database.entries = new Entry*[database.capacity];
 }
 
 Entry *create(Type type, std::string key, void *value) {
@@ -48,41 +28,34 @@ Entry *create(Type type, std::string key, void *value) {
     return entry;
 }
 
-struct Database {
-    Database* database = new Database;
-    //int capacity;
-    //int size;
-    init(database);
-
-    void addEntry(Entry* entry) {
-        if (size == capacity) {
-            resize();
-        }
-
-        entries[size] = entry;
-        size++;
+void addEntry(Database &database, Entry* entry) {
+    if (database.dataSize == database.capacity) {
+        resize(database);
     }
 
-    void resize() {
-        capacity *= 2;
-        Entry** newEntries = new Entry* [capacity];
-        for (int i = 0; i<size; i++) {
-            newEntries[i] = entries[i];
-        }
-        delete[] entries;
-        entries = newEntries;
+    database.entries[database.dataSize] = entry;
+    database.dataSize++;
+    std::cout << database.dataSize << std::endl;
+}
+
+void resize(Database &database) {
+    database.capacity *= 2;
+    Entry** newEntries = new Entry* [database.capacity];
+    for (int i = 0; i<database.dataSize; i++) {
+        newEntries[i] = database.entries[i];
     }
+    delete[] database.entries;
+    database.entries = newEntries;
 }
 
 Entry *get(Database &database, std::string &key) {
-    for (int i = 0; i < database.size; i++) {
-        if (database.entries[i]->key == key) {
-            // std::cout << database.entries[i]->key << ": " << database.entries[i]->value;
-            return database.entries[i];
+    for (int i = 0; i < database.dataSize; i++) {
+        if ((database.entries[i]->key) == key) {
+            Entry* getentry = database.entries[i];
+            // return database.entries[i];
+            return getentry;
         }
-        else {
-            return nullptr;
-        }
+        return nullptr;
     }
 }
 
@@ -95,62 +68,64 @@ void* addArray(Database &database, Entry *entry) {
     std::cin >> arrayType;
 
     std::cout <<"size: ";
-    // std::cin >> array->size;
-    std::cin >> *(static_cast<int*>(array->size));
+    std::cin >> array->size;
   
     if (arrayType == "int") {
         array->type = INT;
-        // entry->value = new int [array->size];
         array->items = new int [array->size];
         for (int i = 0; i < array->size; i++) {
-            std::cout << "item[" << i << "]:";
-            std::cin >> *(static_cast<int*>(array->items[i]));
-            // entry->value[i] = array;
+            std::cout << "item[" << i << "]: ";
+            std::cin >> *(static_cast<int*>(array->items)+i);
+            std::cout << *(static_cast<int*>(array->items)+i);
+            // std::cout << std::endl << *(static_cast<int*>(array->items)+i) <<std::endl;
         }
     }
 
     else if (arrayType == "double") {
         array->type = DOUBLE;
-        // entry->value = new double [array->size];
         array->items = new double [array->size];
         for (int i = 0; i < array->size; i++) {
             std::cout << "item[" << i << "]:";
-            std::cin >> *(static_cast<double*>(array->items[i]));
-        // entry->value[i] = array;
+            std::cin >> *((static_cast<double*>(array->items)+i));
         }
     }
 
     else if (arrayType == "string") {
         array->type = STRING;
-        // entry->value = new std::string [array->size];
         array->items = new std::string [array->size];
         for (int i = 0; i < array->size; i++) {
             std::cout << "item[" << i << "]:";
             std::cin.ignore();
-            getline(std::cin, *(static_cast<std::string*>(array->items[i])));
-            // entry->value[i] = array;
+            std::string stringInput;
+            getline(std::cin, stringInput);
+            *((static_cast<std::string*>(array->items) + i)) = stringInput;
         }
     }
 
     else if (arrayType == "array") {
         array->type = ARRAY;
-        array->items = new Entry* [array->size];
+        array->items = new void* [array->size];
         for (int i = 0; i < array->size; i++) {
-            std::cout << "item[" << i << "]:";
+            std::cout << "item[" << i << "]: ";
             Entry* newEntry = create(ARRAY, "array", nullptr);
 
             arrayCount++;
-            newEntry = addArray(database, newEntry);
-            static_cast<Array*>(array->items[i]) = *static_cast<Array*>(newEntry->value);
+            // newEntry = addArray(database, newEntry);
+            void* arrayEntry = addArray(database, newEntry);
+            // static_cast<Array*>((array->items)+i) = static_cast<Array*>(newEntry->value);
+            ((void**)array->items)[i] = arrayEntry;
+
             arrayCount--;
         }
     }
     
     entry->value = array;
+    // *static_cast<Array*>(entry->value) = array;
     if (arrayCount == 0) {
-        database.addEntry(entry);
+        addEntry(database, entry);
     }
-    return entry->value;
+    // return entry->value;
+    return static_cast<void*>(entry->value);
 }
 
 void add(Database &database, Entry *entry){
@@ -165,14 +140,14 @@ void add(Database &database, Entry *entry){
         entry->type = INT;
         entry->value = new int;
         std::cin >> *(static_cast<int*>(entry->value)); 
-        database.addEntry(entry);
+        addEntry(database, entry);
     }
 
     else if (inputType == "double") {
         entry->type = DOUBLE;
         entry->value = new double;
         std::cin >> *(static_cast<double*>(entry->value)); 
-        database.addEntry(entry);
+        addEntry(database, entry);
     }
 
     else if (inputType == "string") {
@@ -180,7 +155,7 @@ void add(Database &database, Entry *entry){
         entry->value = new std::string;
         std::cin.ignore();
         getline(std::cin, *(static_cast<std::string*>(entry->value)));
-        database.addEntry(entry);
+        addEntry(database, entry);
     }
 
     else if (inputType == "array") {
@@ -189,34 +164,36 @@ void add(Database &database, Entry *entry){
 }
 
 void list(Database &database) {
-    for (int i = 0; i < database.size; i++) {
+    for (int i = 0; i < database.dataSize; i++) {
         std::cout << database.entries[i]->key << ": ";
         if (database.entries[i]->type == INT) {
-            std::cout << *static_cast<int*>(database.entries[i]->value) << std::endl;
+            std::cout << *static_cast<int*>(database.entries[i]->value);
         }
         if (database.entries[i]->type == DOUBLE) {
-            std::cout << *static_cast<double*>(database.entries[i]->value) << std::endl;
+            std::cout << *static_cast<double*>(database.entries[i]->value);
         }
         else if (database.entries[i]->type == STRING) {
-            std::cout << ": \"" << *static_cast<std::string*>(database.entries[i]->value) << "\"" <<std::endl;
+            std::cout << "\"" << *static_cast<std::string*>(database.entries[i]->value) << "\"";
         }
         else if (database.entries[i]->type == ARRAY) {
             std::cout << "[";
-            Array* printArray = static_cast<Array*>(database.entries[i]->value);
-            for (int j=0; j < printArray->size; j++) {
+            Array* printList = static_cast<Array*>(database.entries[i]->value);
+            for (int j=0; j < printList->size; j++) {
                 if (j>0) {
                     std::cout << ",";
                 }
-                printArray(static_cast<Entry*>(printArray->items[j]));
+                printArray(static_cast<Entry*>(printList->items)+i);
+                // printArray(printList->items[j]);
             }
-            std::cout << " ]" << std::endl;
+            std::cout << " ]";
         }
+        std::cout << std::endl;
     }
 }
 
 void remove(Database &database, std::string &key) {
     int index = -1;
-    for (int i = 0; i < database.size; i++) {
+    for (int i = 0; i < database.dataSize; i++) {
         if (database.entries[i]->key == key) {
             index = i;
             break;
@@ -229,26 +206,27 @@ void remove(Database &database, std::string &key) {
     }
 
     delete database.entries[index];
-    database.entries[index] = database.entries[database.size - 1];
-    database.size--;
+    database.entries[index] = database.entries[database.dataSize - 1];
+    database.dataSize--;
 }
 
 void destroy(Database &database) {
-    for (int i = 0; i< database.size; i++) {
+    for (int i = 0; i< database.dataSize; i++) {
         delete database.entries[i];
+        std::cout << std::endl;
     }
     delete[] database.entries;
 }
 
 void printArray(Entry* getEntry) {
     if (getEntry->type == INT) {
-        std::cout <<  getEntry->value;
+        std::cout << *static_cast<int*>(getEntry->value);
     }
     else if (getEntry->type == DOUBLE) {
-        std::cout <<  getEntry->value;
+        std::cout << *static_cast<double*>(getEntry->value);
     }
     if (getEntry->type == STRING) {
-        std::cout << "\"" << getEntry->value << "\"";
+        std::cout << "\"" << *static_cast<std::string*>(getEntry->value) << "\"";
     }
     if (getEntry->type == ARRAY) {
         Array* getArray = static_cast<Array*>(getEntry->value);
@@ -257,13 +235,17 @@ void printArray(Entry* getEntry) {
             if (i > 0) {
                 std::cout << ", ";
             }
-            printArray(static_cast<Entry*>(getArray->items[i]));
+            // Entry* itemEntry = (static_cast<Entry*>(getArray->items) + i);
+            // printArray(itemEntry);
+            printArray((static_cast<Entry*>(getArray->items) + i));
         }
         std::cout << "]" << std::endl;
     }
 }
 int main() {
     Database *database = new Database;
+
+    init(*database);
 
     while(true) {
         std::cout << "command (list, add, get, del, exit): ";
@@ -272,34 +254,34 @@ int main() {
         std::string key;
 
         if (command == "list") {
-            list(database);
+            list(*database);
         }
 
         else if (command == "add") {
             Entry* entry = create(INT, "key", nullptr);
-            add(database, entry);
+            add(*database, entry);
         }
 
         else if (command == "del") {
             std::cout << "key: ";
             std::cin >> key;
-            database.remove(database, key);
+            remove(*database, key);
         }
 
         else if (command == "get") {
             std::cout << "key: ";
             std::cin >> key;
-            Entry* getEntry = get(database, key);
+            Entry* getEntry = get(*database, key);
 
             if (getEntry != nullptr) {
                 std::cout << getEntry->key << ": ";
 
-                printGet(getEntry);
-            }        
+                printArray(getEntry);
+            }
         }
 
         else if (command == "exit") {
-            destroy(database);
+            destroy(*database);
             exit(0);
         }
 
@@ -309,13 +291,3 @@ int main() {
         std::cout << std::endl;
     }
 }
-
-
-#endif
-
-
-// Entry* newEntry = database.create(ARRAY, "array", nullptr);
-//         arrayCount++;
-//         array->items[i] = addArray(database, newEntry);
-//         static_cast<Array*>(array->items[i]) = *static_cast<Array*>(subEntry->value);
-//         arrayCount--;
