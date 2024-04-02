@@ -26,14 +26,7 @@ int arrayCount = 0;
 struct Array {
     int size;
     Type type;
-    void *items;
-};
-
-struct Entry {
-    Type type;
-    std::string key;
-    void *value;
-};
+}
 
 struct Entry {
     Type type;
@@ -102,7 +95,8 @@ void* addArray(Database &database, Entry *entry) {
     std::cin >> arrayType;
 
     std::cout <<"size: ";
-    std::cin >> array->size;
+    // std::cin >> array->size;
+    std::cin >> *(static_cast<int*>(array->size));
   
     if (arrayType == "int") {
         array->type = INT;
@@ -149,14 +143,10 @@ void* addArray(Database &database, Entry *entry) {
             newEntry = addArray(database, newEntry);
             static_cast<Array*>(array->items[i]) = *static_cast<Array*>(newEntry->value);
             arrayCount--;
-
-            // entry->value[i] = array;
-            // return entry->value;
         }
     }
     
     entry->value = array;
-    // database.addEntry(entry);
     if (arrayCount == 0) {
         database.addEntry(entry);
     }
@@ -182,8 +172,7 @@ void add(Database &database, Entry *entry){
         entry->type = DOUBLE;
         entry->value = new double;
         std::cin >> *(static_cast<double*>(entry->value)); 
-        Entry* entryResult = database.create(entry->type, entry->key, entry->value);
-        database.addEntry(entryResult);
+        database.addEntry(entry);
     }
 
     else if (inputType == "string") {
@@ -191,12 +180,10 @@ void add(Database &database, Entry *entry){
         entry->value = new std::string;
         std::cin.ignore();
         getline(std::cin, *(static_cast<std::string*>(entry->value)));
-        Entry* entryResult = database.create(entry->type, entry->key, entry->value);
-        database.addEntry(entryResult);
+        database.addEntry(entry);
     }
 
     else if (inputType == "array") {
-        //entry->type = ARRAY;
         addArray(database, entry);
     }
 }
@@ -250,13 +237,33 @@ void destroy(Database &database) {
     for (int i = 0; i< database.size; i++) {
         delete database.entries[i];
     }
-
     delete[] database.entries;
 }
 
+void printArray(Entry* getEntry) {
+    if (getEntry->type == INT) {
+        std::cout <<  getEntry->value;
+    }
+    else if (getEntry->type == DOUBLE) {
+        std::cout <<  getEntry->value;
+    }
+    if (getEntry->type == STRING) {
+        std::cout << "\"" << getEntry->value << "\"";
+    }
+    if (getEntry->type == ARRAY) {
+        Array* getArray = static_cast<Array*>(getEntry->value);
+        std::cout << "[";
+        for (int i = 0; i < getArray->size; i++) {
+            if (i > 0) {
+                std::cout << ", ";
+            }
+            printArray(static_cast<Entry*>(getArray->items[i]));
+        }
+        std::cout << "]" << std::endl;
+    }
+}
 int main() {
     Database *database = new Database;
-    init (database);
 
     while(true) {
         std::cout << "command (list, add, get, del, exit): ";
@@ -288,9 +295,7 @@ int main() {
                 std::cout << getEntry->key << ": ";
 
                 printGet(getEntry);
-            }
-
-            
+            }        
         }
 
         else if (command == "exit") {
@@ -301,33 +306,11 @@ int main() {
         else {
             std::cout << "invalid command" << std::endl;
         }
-
         std::cout << std::endl;
     }
 }
 
-void printArray(Entry* getEntry) {
-    std::cout << "[";
-    if (getEntry->type == INT) {
-        std::cout <<  getEntry->value;
-    }
-    else if (getEntry->type == DOUBLE) {
-        std::cout <<  getEntry->value;
-    }
-    if (getEntry->type == STRING) {
-        std::cout << "\"" << getEntry->value << "\"";
-    }
-    if (getEntry->type == ARRAY) {
-        Array* getArray = static_cast<Array*>(getEntry->value);
-        for (int i = 0; i < getArray->size; i++) {
-            if (i > 0) {
-                std::cout << ", ";
-            }
-            printArray(static_cast<Entry*>(getArray->items[i]));
-        }
-    }
-    std::cout << "]" << std::endl;
-}
+
 #endif
 
 
