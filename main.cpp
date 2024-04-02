@@ -17,7 +17,7 @@ int arrayCount = 0;
 void init(Database &database) {
     database.capacity = 10;
     database.dataSize = 0;
-    database.entries = new Entry*[database.capacity];
+    database.entries = new Entry* [database.capacity];
 }
 
 Entry *create(Type type, std::string key, void *value) {
@@ -35,7 +35,6 @@ void addEntry(Database &database, Entry* entry) {
 
     database.entries[database.dataSize] = entry;
     database.dataSize++;
-    std::cout << database.dataSize << std::endl;
 }
 
 void resize(Database &database) {
@@ -51,12 +50,16 @@ void resize(Database &database) {
 Entry *get(Database &database, std::string &key) {
     for (int i = 0; i < database.dataSize; i++) {
         if ((database.entries[i]->key) == key) {
-            Entry* getentry = database.entries[i];
-            // return database.entries[i];
-            return getentry;
+            // Entry* getEntry = new Entry;
+            // getEntry -> key = database.entries[i] ->key;
+            // getEntry -> type = database.entries[i] ->type;
+            // getEntry -> value = database.entries[i] ->value;
+            return database.entries[i];
+            
+            // return getEntry;
         }
-        return nullptr;
     }
+    return nullptr;
 }
 
 void* addArray(Database &database, Entry *entry) {
@@ -76,7 +79,6 @@ void* addArray(Database &database, Entry *entry) {
         for (int i = 0; i < array->size; i++) {
             std::cout << "item[" << i << "]: ";
             std::cin >> *(static_cast<int*>(array->items)+i);
-            std::cout << *(static_cast<int*>(array->items)+i);
             // std::cout << std::endl << *(static_cast<int*>(array->items)+i) <<std::endl;
         }
     }
@@ -213,7 +215,6 @@ void remove(Database &database, std::string &key) {
 void destroy(Database &database) {
     for (int i = 0; i< database.dataSize; i++) {
         delete database.entries[i];
-        std::cout << std::endl;
     }
     delete[] database.entries;
 }
@@ -272,6 +273,9 @@ int main() {
             std::cout << "key: ";
             std::cin >> key;
             Entry* getEntry = get(*database, key);
+            // std::cout << getEntry->key <<std::endl;
+            // std::cout << getEntry->type <<std::endl;
+            // std::cout << getEntry->value <<std::endl;
 
             if (getEntry != nullptr) {
                 std::cout << getEntry->key << ": ";
