@@ -51,8 +51,6 @@ Entry *get(Database &database, std::string &key) {
     for (int i = 0; i < database.dataSize; i++) {
         if ((database.entries[i]->key) == key) {
             return database.entries[i];
-            
-            // return getEntry;
         }
     }
     return nullptr;
@@ -75,7 +73,6 @@ void* addArray(Database &database, Entry *entry) {
     if (arrayType == "int") {
         array->type = INT;
         array->items = new int [array->size];
-        // std::string intItems;
         for (int i = 0; i < array->size; i++) {
             std::cout << "item[" << i << "]: ";
             std::cin >> *(static_cast<int*>(array->items)+i);
@@ -117,7 +114,7 @@ void* addArray(Database &database, Entry *entry) {
             if (i>0) {
                 *static_cast<std::string*>(entry->value) += ", ";
             }
-            *static_cast<std::string*>(entry->value) += *(static_cast<std::string*>(array->items) + i);
+            *static_cast<std::string*>(entry->value) += "\"" + *(static_cast<std::string*>(array->items) + i) + "\"";
         }
     }
 
@@ -138,18 +135,16 @@ void* addArray(Database &database, Entry *entry) {
             if (i>0) {
                 *static_cast<std::string*>(entry->value) += ", ";
             }
-            *static_cast<std::string*>(entry->value) += *(static_cast<void**>(array->items) + i);
-            // *static_cast<std::string*>(static_cast<void*>(entry->value)) += *(static_cast<std::string*>(static_cast<void*>(array->items) + i));
-            // *static_cast<std::string*>(entry->value) = *static_cast<std::string*>(static_cast<char*>(array->items) + i * sizeof(std::string));
+            void* resultItem = static_cast<void**>(array->items)[i];
+            std::string item = *static_cast<std::string*>(resultItem);
+            *static_cast<std::string*>(entry->value) += item;
         }
     }
     *static_cast<std::string*>(entry->value) += "]";
 
-    // *static_cast<Array*>(entry->value) = array;
     if (arrayCount == 0) {
         addEntry(database, entry);
     }
-    // return entry->value;
     return static_cast<std::string*>(entry->value);
 }
 
@@ -226,6 +221,7 @@ void remove(Database &database, std::string &key) {
     delete database.entries[index];
     database.entries[index] = database.entries[database.dataSize - 1];
     database.dataSize--;
+
 }
 
 void destroy(Database &database) {
@@ -290,6 +286,7 @@ int main() {
 
         else if (command == "exit") {
             destroy(*database);
+            delete database;
             exit(0);
         }
 
